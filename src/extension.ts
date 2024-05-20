@@ -1,27 +1,92 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import axios from 'axios';
+import cheerio from 'cheerio';
+import { Match, fetchLiveCricketMatches } from './Match';
+import { log } from 'console';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "cricket" is now active!');
-	
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('cricket.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from CricVS!');
-	});
 
+    const statusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right,
+        100
+      );
+    console.log(statusBarItem);
+    statusBarItem.text = "VS Cricket";
+    statusBarItem.command = "cricket.askQuestion";
+    statusBarItem.show();
 
+    let askQuestion = vscode.commands.registerCommand(
+        "cricket.askQuestion",
+        async function () {
+          const items = [
+            {
+              label: "Live Scores",
+              detail: "Display live cricket scores",
+              command: "cricket.liveScores",
+            },
+            {
+              label: "Latest News",
+              detail: "Display latest cricket news",
+              command: "cricket.latestNews",
+            },
+          ];
+          const response = await vscode.window.showQuickPick(items);
+          if (response != undefined)
+          {
+              vscode.commands.executeCommand(response.command);
+          }
+        }
+      );
 
-	context.subscriptions.push(disposable);
+     
+  let disposable = vscode.commands.registerCommand(
+    "cricket.liveScores",
+    function () {
+      vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Fetching Scores...",
+          cancellable: true,
+        },
+        async (progress, token) => {
+          // Update progress
+          progress.report({ increment: 0 });
+          const matches = await fetchLiveCricketMatches();
+          progress.report({ increment: 100 });
+
+          if (matches.length === 0) {
+              vscode.window.showInformationMessage('No live matches available.');
+              return;
+          }
+
+          matches.map(m=>{
+            console.log(m);
+            
+          })
+
+          const scores = matches.map(match => ({
+              label: match.teamsHeading,
+              description: `${match.matchNumberVenue} - ${match.score} vs ${match.bowlTeamScore}`,
+              detail: match.textLive || match.textComplete,
+              match // Store the whole match object for further use
+          }));
+
+          const selected = await vscode.window.showQuickPick(scores, {
+              placeHolder: 'Select a live match to view details'
+          });
+
+          if (selected) {
+              vscode.window.showInformationMessage(`You selected: ${selected.label}`);
+          }
+      }
+
+      );
+    }
+  );
+
+  context.subscriptions.push(statusBarItem);
+  context.subscriptions.push(disposable);
 }
 
 // This method is called when your extension is deactivated

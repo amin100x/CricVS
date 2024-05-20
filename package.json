@@ -12,16 +12,18 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "menus": {
-      "editor/title": [
-        {
-          "when": "resourceLangId == markdown",
-          "command": "markdown.showPreview",
-          "alt": "markdown.showPreviewToSide",
-          "group": "navigation"
-        }
-      ]
-    }
+    "commands": [
+      {
+        "command": "cricket.liveScores",
+        "category": "Cricket",
+        "title": "Live Scores"
+      },
+      {
+        "command": "cricket.latestNews",
+        "category": "Cricket",
+        "title": "Latest Cricket News"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
